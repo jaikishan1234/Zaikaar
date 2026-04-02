@@ -17,7 +17,7 @@ const schema: Schema<IUser> = new Schema(
       type: String,
       required: true,
       unique: true,
-    },
+    },  
     image: {
       type: String,
       required: true,
