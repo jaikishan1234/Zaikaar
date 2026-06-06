@@ -3,6 +3,8 @@ import { isAuth, isSeller } from "../middlewares/isAuth.js";
 import {
   addRestraunt,
   fetchMyRestaurant,
+  fetchSingleRestaurant,
+  getNearbyRestaurant,
   updateRestaurant,
   updateStatusRestaurant
 } from "../controllers/restaurant.js";
@@ -37,5 +39,19 @@ router.put("/status", isAuth, isSeller, updateStatusRestaurant);
  * @access Private (Seller)
  */
 router.put("/edit", isAuth, isSeller, updateRestaurant);
+
+/**
+ * @route GET /api/restaurant/all
+ * @desc Get all nearby restaurants for the authenticated user
+ * @access Private
+ */
+router.get("/all", isAuth, getNearbyRestaurant);
+
+/**
+ * @route GET /api/restaurant/:id
+ * @desc Get details of a single restaurant by ID
+ * @access Private
+ */
+router.get("/:id", isAuth, fetchSingleRestaurant);
 
 export default router;
