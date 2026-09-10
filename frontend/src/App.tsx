@@ -16,6 +16,7 @@ import Checkout from "./pages/Checkout";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import OrderSuccess from "./pages/OrderSuccess";
 import Orders from "./pages/Orders";
+import OrderPage from "./pages/OrderPage";
 
 const App = () => {
   const { user} = useAppData();
@@ -39,6 +40,7 @@ const App = () => {
               element={<PaymentSuccess />}
             />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/order/:id" element={<OrderPage />} />
             <Route path="/ordersuccess" element={<OrderSuccess />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/account" element={<Account />} />
