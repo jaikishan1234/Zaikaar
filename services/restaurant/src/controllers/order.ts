@@ -6,6 +6,7 @@ import Cart from "../models/Cart.js";
 import { IMenuItem } from "../models/MenuItems.js";
 import Order from "../models/Order.js";
 import Restaurant, { IRestaurant } from "../models/Restaurant.js";
+import { publishEvent } from "../config/order.publisher.js";
 
 export const createOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
   const user = req.user;
@@ -54,7 +55,7 @@ export const createOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return +(R * c).toFixed(2);
   };
- 
+
   const cartItems = await Cart.find({ userId: user._id })
     .populate<{ itemId: IMenuItem }>("itemId")
     .populate<{ restaurantId: IRestaurant }>("restaurantId");
@@ -294,7 +295,21 @@ export const updateOrderStatus = TryCatch(
     );
 
     // now assign riders
-    
+    if (status === "ready_for_rider") {
+      console.log(
+        "Publishing Order ready for rider event for order",
+        order._id
+      );
+
+      await publishEvent("ORDER_READY_FOR_RIDER", {
+        orderId: order._id.toString(),
+        restaurantId: restaurant._id.toString(),
+        location: restaurant.autoLocation,
+      });
+
+      console.log("Event Published successfully");
+    }
+
     res.json({
       message: "order status updated successfully",
       order,
@@ -342,3 +357,5 @@ export const fetchSingleOrder = TryCatch(
     res.json(order);
   }
 );
+
+
