@@ -10,21 +10,33 @@ interface EarningsOrder {
 }
 
 interface EarningsData {
+  period: string;
+
   summary: {
     totalEarnings: number;
     totalDeliveries: number;
     totalDistance: number;
   };
+
   orders: EarningsOrder[];
 }
 
+type EarningsPeriod = "1d" | "7d" | "30d" | "all";
+
 const RiderEarnings = () => {
-  const [earnings, setEarnings] = useState<EarningsData | null>(null);
+  const [earnings, setEarnings] =
+    useState<EarningsData | null>(null);
+
+  const [period, setPeriod] =
+    useState<EarningsPeriod>("7d");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
-  const fetchEarnings = async () => {
+  const fetchEarnings = async (
+    selectedPeriod: EarningsPeriod = period
+  ) => {
     try {
       setLoading(true);
       setError("");
@@ -32,8 +44,14 @@ const RiderEarnings = () => {
       const { data } = await axios.get(
         `${riderService}/api/rider/earnings`,
         {
+          params: {
+            period: selectedPeriod,
+          },
+
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem(
+              "token"
+            )}`,
           },
         }
       );
@@ -51,6 +69,14 @@ const RiderEarnings = () => {
     fetchEarnings();
   }, []);
 
+  const handlePeriodChange = (
+    newPeriod: EarningsPeriod
+  ) => {
+    setPeriod(newPeriod);
+    setShowHistory(false);
+    fetchEarnings(newPeriod);
+  };
+
   if (loading) {
     return (
       <div className="mx-auto max-w-md px-4">
@@ -67,7 +93,9 @@ const RiderEarnings = () => {
     return (
       <div className="mx-auto max-w-md px-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-red-500">
+            {error}
+          </p>
         </div>
       </div>
     );
@@ -82,7 +110,8 @@ const RiderEarnings = () => {
   return (
     <div className="mx-auto max-w-md px-4 pb-6">
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-        {/* Earnings Header */}
+
+        {/* Header */}
         <div className="border-b px-5 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -95,14 +124,55 @@ const RiderEarnings = () => {
               </p>
             </div>
 
-            <span className="text-xl">💰</span>
+            <span className="text-xl">
+              💰
+            </span>
           </div>
         </div>
 
-        {/* Main Earnings */}
+        {/* Period Filter */}
+        <div className="border-b px-5 py-4">
+          <label
+            htmlFor="earnings-period"
+            className="mb-2 block text-xs font-medium text-gray-500"
+          >
+            Earnings Period
+          </label>
+
+          <select
+            id="earnings-period"
+            value={period}
+            onChange={(e) =>
+              handlePeriodChange(
+                e.target.value as EarningsPeriod
+              )
+            }
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-700 outline-none focus:border-gray-400"
+          >
+            <option value="1d">
+              Last 1 Day
+            </option>
+
+            <option value="7d">
+              Last 7 Days
+            </option>
+
+            <option value="30d">
+              Last 30 Days
+            </option>
+
+            <option value="all">
+              All Time
+            </option>
+          </select>
+        </div>
+
+        {/* Summary */}
         <div className="px-5 py-5">
+
           <div className="grid grid-cols-2 gap-3">
-            {/* Total Earnings */}
+
+            {/* Earnings */}
             <div className="rounded-lg bg-gray-50 p-4">
               <p className="text-xs text-gray-500">
                 Total Earnings
@@ -142,14 +212,17 @@ const RiderEarnings = () => {
             </div>
 
             <span className="text-xs text-gray-400">
-              Completed deliveries
+              Selected period
             </span>
           </div>
 
-          {/* Actions */}
+          {/* Buttons */}
           <div className="mt-4 flex gap-2">
+
             <button
-              onClick={() => setShowHistory((prev) => !prev)}
+              onClick={() =>
+                setShowHistory((prev) => !prev)
+              }
               className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
             >
               {showHistory
@@ -158,7 +231,7 @@ const RiderEarnings = () => {
             </button>
 
             <button
-              onClick={fetchEarnings}
+              onClick={() => fetchEarnings()}
               className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
             >
               Refresh
@@ -166,36 +239,40 @@ const RiderEarnings = () => {
           </div>
         </div>
 
-        {/* Delivery History */}
+        {/* History */}
         {showHistory && (
           <div className="border-t">
+
             <div className="px-5 py-4">
               <h3 className="font-semibold text-gray-800">
                 Delivery History
               </h3>
 
               <p className="mt-1 text-xs text-gray-500">
-                Your completed deliveries
+                Deliveries in the selected period
               </p>
             </div>
 
             {orders.length === 0 ? (
               <div className="border-t px-5 py-8 text-center">
                 <p className="text-sm text-gray-500">
-                  No completed deliveries yet.
+                  No completed deliveries in this period.
                 </p>
               </div>
             ) : (
               <div className="border-t">
+
                 {orders.map((order) => (
                   <div
                     key={order.orderId}
                     className="border-b px-5 py-4 last:border-b-0"
                   >
                     <div className="flex items-center justify-between">
+
                       <div>
                         <p className="font-medium text-gray-800">
-                          Order #{order.orderId.slice(-6)}
+                          Order #
+                          {order.orderId.slice(-6)}
                         </p>
 
                         <p className="mt-1 text-xs text-gray-500">
@@ -209,22 +286,28 @@ const RiderEarnings = () => {
                         </p>
 
                         <p className="mt-1 text-xs text-gray-500">
-                          Distance: {order.distance.toFixed(2)} km
+                          Distance:{" "}
+                          {order.distance.toFixed(2)} km
                         </p>
                       </div>
 
                       <div className="text-right">
+
                         <p className="font-bold text-[#e23744]">
-                          ₹{order.riderAmount.toFixed(2)}
+                          ₹
+                          {order.riderAmount.toFixed(2)}
                         </p>
 
                         <p className="mt-1 text-xs text-green-600">
                           Delivered
                         </p>
+
                       </div>
+
                     </div>
                   </div>
                 ))}
+
               </div>
             )}
           </div>

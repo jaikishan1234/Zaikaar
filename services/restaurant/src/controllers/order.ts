@@ -663,6 +663,7 @@ export const fetchRiderEarnings = TryCatch(
     }
 
     const { riderId } = req.params;
+    const { period = "all" } = req.query;
 
     if (!riderId) {
       return res.status(400).json({
@@ -670,31 +671,61 @@ export const fetchRiderEarnings = TryCatch(
       });
     }
 
-    const orders = await Order.find({
+    const validPeriods = ["1d", "7d", "30d", "all"];
+
+    if (!validPeriods.includes(period as string)) {
+      return res.status(400).json({
+        message: "Invalid earnings period",
+      });
+    }
+
+    const query: any = {
       riderId,
       status: "delivered",
       paymentStatus: "paid",
-    }).sort({ createdAt: -1 });
+    };
+
+    if (period !== "all") {
+      const days = Number(
+        (period as string).replace("d", "")
+      );
+
+      const startDate = new Date();
+
+      startDate.setDate(startDate.getDate() - days);
+
+      query.createdAt = {
+        $gte: startDate,
+      };
+    }
+
+    const orders = await Order.find(query).sort({
+      createdAt: -1,
+    });
 
     const totalEarnings = orders.reduce(
-      (total, order) => total + order.riderAmount,
+      (total, order) => total + (order.riderAmount || 0),
       0
     );
 
     const totalDeliveries = orders.length;
 
     const totalDistance = orders.reduce(
-      (total, order) => total + order.distance,
+      (total, order) => total + (order.distance || 0),
       0
     );
 
     return res.json({
       success: true,
+
+      period,
+
       summary: {
         totalEarnings: Number(totalEarnings.toFixed(2)),
         totalDeliveries,
         totalDistance: Number(totalDistance.toFixed(2)),
       },
+
       orders: orders.map((order) => ({
         orderId: order._id,
         riderAmount: order.riderAmount,

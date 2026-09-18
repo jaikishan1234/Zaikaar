@@ -329,12 +329,21 @@ export const fetchMyEarnings = TryCatch(
       });
     }
 
+    const period =
+      typeof req.query.period === "string"
+        ? req.query.period
+        : "all";
+
     try {
       const { data } = await axios.get(
         `${process.env.RESTAURANT_SERVICE}/api/order/internal/rider/${rider._id}/earnings`,
         {
+          params: {
+            period,
+          },
           headers: {
-            "x-internal-key": process.env.INTERNAL_SERVICE_KEY,
+            "x-internal-key":
+              process.env.INTERNAL_SERVICE_KEY,
           },
         }
       );
