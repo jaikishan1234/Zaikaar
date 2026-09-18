@@ -307,3 +307,48 @@ export const updateOrderStatus = TryCatch(
     }
   }
 );
+
+export const fetchMyEarnings = TryCatch(
+  async (req: AuthenticatedRequest, res) => {
+    const riderUserId = req.user?._id;
+
+    if (!riderUserId) {
+      return res.status(401).json({
+        message: "Please Login",
+      });
+    }
+
+    const rider = await Rider.findOne({
+      userId: riderUserId,
+      isVerified: true,
+    });
+
+    if (!rider) {
+      return res.status(404).json({
+        message: "Rider profile not found",
+      });
+    }
+
+    try {
+      const { data } = await axios.get(
+        `${process.env.RESTAURANT_SERVICE}/api/order/internal/rider/${rider._id}/earnings`,
+        {
+          headers: {
+            "x-internal-key": process.env.INTERNAL_SERVICE_KEY,
+          },
+        }
+      );
+
+      return res.json(data);
+    } catch (error: any) {
+      console.error(
+        "Failed to fetch rider earnings:",
+        error?.response?.data || error
+      );
+
+      return res.status(500).json({
+        message: "Failed to fetch rider earnings",
+      });
+    }
+  }
+);

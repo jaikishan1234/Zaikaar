@@ -651,3 +651,56 @@ export const getRestaurantSales = TryCatch(
     });
   }
 );
+
+export const fetchRiderEarnings = TryCatch(
+  async (req, res) => {
+    const internalKey = req.headers["x-internal-key"];
+
+    if (internalKey !== process.env.INTERNAL_SERVICE_KEY) {
+      return res.status(401).json({
+        message: "Unauthorized internal request",
+      });
+    }
+
+    const { riderId } = req.params;
+
+    if (!riderId) {
+      return res.status(400).json({
+        message: "Rider id is required",
+      });
+    }
+
+    const orders = await Order.find({
+      riderId,
+      status: "delivered",
+      paymentStatus: "paid",
+    }).sort({ createdAt: -1 });
+
+    const totalEarnings = orders.reduce(
+      (total, order) => total + order.riderAmount,
+      0
+    );
+
+    const totalDeliveries = orders.length;
+
+    const totalDistance = orders.reduce(
+      (total, order) => total + order.distance,
+      0
+    );
+
+    return res.json({
+      success: true,
+      summary: {
+        totalEarnings: Number(totalEarnings.toFixed(2)),
+        totalDeliveries,
+        totalDistance: Number(totalDistance.toFixed(2)),
+      },
+      orders: orders.map((order) => ({
+        orderId: order._id,
+        riderAmount: order.riderAmount,
+        distance: order.distance,
+        createdAt: order.createdAt,
+      })),
+    });
+  }
+);

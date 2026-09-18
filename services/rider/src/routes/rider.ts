@@ -4,6 +4,7 @@ import {
   acceptOrder,
   addRiderProfile,
   fetchMyCurrentOrder,
+  fetchMyEarnings,
   fetchMyProfile,
   toggleRiderAvailablity,
   updateOrderStatus,
@@ -19,5 +20,6 @@ router.patch("/toggle", isAuth, toggleRiderAvailablity);
 router.post("/accept/:orderId", isAuth, acceptOrder);
 router.get("/order/current", isAuth, fetchMyCurrentOrder);
 router.put("/order/update/:orderId", isAuth, updateOrderStatus);
+router.get("/earnings", isAuth, fetchMyEarnings);
 
 export default router;

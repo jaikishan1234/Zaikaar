@@ -10,6 +10,7 @@ import audio from "../assets/faaah.mp3";
 import RiderOrderRequest from "../components/RiderOrderRequest";
 import RiderCurrentOrder from "../components/RiderCurrentOrder";
 import RiderOrderMap from "../components/RiderOrderMap";
+import RiderEarnings from "../components/RiderEarnings";
 
 interface IRider {
   _id: string;
@@ -372,6 +373,7 @@ const RiderDashboard = () => {
           <RiderOrderMap order={currentOrder} />
         </div>
       )}
+      <RiderEarnings />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import {
   createOrder,
   fetchOrderForPayment,
   fetchRestaurantOrders,
+  fetchRiderEarnings,
   fetchSingleOrder,
   getCurrentOrderForRider,
   getMyOrders,
@@ -30,6 +31,10 @@ router.get(
   isAuth,
   isSeller,
   fetchRestaurantOrders
+);
+router.get(
+  "/internal/rider/:riderId/earnings",
+  fetchRiderEarnings
 );
 router.put("/:orderId", isAuth, isSeller, updateOrderStatus);
 router.put("/assign/rider", assignRiderToOrder);
