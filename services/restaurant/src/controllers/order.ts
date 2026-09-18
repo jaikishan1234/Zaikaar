@@ -553,3 +553,101 @@ export const updateOrderStatusRider = TryCatch(async (req, res) => {
     });
   }
 });
+
+export const getRestaurantSales = TryCatch(
+  async (req: AuthenticatedRequest, res) => {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const { restaurantId } = req.params;
+
+    if (!restaurantId) {
+      return res.status(400).json({
+        message: "Restaurant id is required",
+      });
+    }
+
+    // Make sure the seller can only access their own restaurant's sales
+    if (user.restaurantId !== restaurantId) {
+      return res.status(401).json({
+        message: "You are not allowed to view these sales",
+      });
+    }
+
+    // Only paid and delivered orders count as completed sales
+    const orders = await Order.find({
+      restaurantId,
+      status: "delivered",
+      paymentStatus: "paid",
+    }).sort({ createdAt: -1 });
+
+    const RESTAURANT_SHARE = 0.70;
+
+    let totalSubtotal = 0;
+    let totalSales = 0;
+    let totalItemsSold = 0;
+
+    const itemSales = new Map<
+      string,
+      {
+        itemId: string;
+        name: string;
+        quantity: number;
+        revenue: number;
+      }
+    >();
+
+    for (const order of orders) {
+      totalSubtotal += order.subtotal;
+
+      // Restaurant receives 70% of the order subtotal
+      totalSales += order.subtotal * RESTAURANT_SHARE;
+
+      for (const item of order.items) {
+        totalItemsSold += item.quauntity;
+
+        const existingItem = itemSales.get(item.itemId);
+
+        const itemRevenue =
+          item.price * item.quauntity * RESTAURANT_SHARE;
+
+        if (existingItem) {
+          existingItem.quantity += item.quauntity;
+          existingItem.revenue += itemRevenue;
+        } else {
+          itemSales.set(item.itemId, {
+            itemId: item.itemId,
+            name: item.name,
+            quantity: item.quauntity,
+            revenue: itemRevenue,
+          });
+        }
+      }
+    }
+
+    const topItems = Array.from(itemSales.values())
+      .sort((a, b) => b.quantity - a.quantity)
+      .map((item) => ({
+        ...item,
+        revenue: Number(item.revenue.toFixed(2)),
+      }));
+
+    res.json({
+      success: true,
+
+      summary: {
+        totalSales: Number(totalSales.toFixed(2)),
+        totalSubtotal: Number(totalSubtotal.toFixed(2)),
+        totalOrders: orders.length,
+        totalItemsSold,
+      },
+
+      topItems,
+    });
+  }
+);
