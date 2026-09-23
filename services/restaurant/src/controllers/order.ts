@@ -440,9 +440,9 @@ export const getCurrentOrderForRider = TryCatch(async (req, res) => {
 
   const { riderId } = req.query;
 
-  if (!riderId) {
+  if (!riderId || typeof riderId !== "string") {
     return res.status(400).json({
-      message: "Rider id is required",
+      message: "Valid rider id is required",
     });
   }
 
